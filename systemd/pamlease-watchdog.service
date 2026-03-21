@@ -1,0 +1,14 @@
+[Unit]
+Description=pam-lease session watchdog
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/pamlease-watchdog
+Restart=always
+RestartSec=10
+StandardOutput=null
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

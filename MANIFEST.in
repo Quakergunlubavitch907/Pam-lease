@@ -1,0 +1,6 @@
+include README.md
+include setup.py
+recursive-include pamlease *.py
+recursive-include pam_lease *.c Makefile
+recursive-include systemd *.service *.timer
+recursive-include tests *.py *.lease
